@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#0b0c10">
+  <meta name="color-scheme" content="dark light">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Voice Lab">
+  <title>Shin Voice Lab</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icon-180.png">
+  <link rel="icon" href="./icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">SHIN VOICE LAB</div>
+        <h1 id="screenTitle">話す</h1>
+      </div>
+      <button id="newBtn" class="icon-btn" aria-label="新規">＋</button>
+    </header>
+
+    <main>
+      <section id="screen-capture" class="screen active">
+        <div id="installCard" class="card install-card hidden">
+          <div class="card-title">📱 ホーム画面に置けます</div>
+          <p>Safariの共有ボタン →「ホーム画面に追加」→「ウェブアプリとして開く」をON。</p>
+          <button id="dismissInstall" class="secondary">閉じる</button>
+        </div>
+
+        <div class="segmented" role="tablist">
+          <button class="seg active" data-mode="mic">🎙 話す</button>
+          <button class="seg" data-mode="file">🎵 曲・音声</button>
+        </div>
+
+        <div id="micMode">
+          <div class="hero card">
+            <button id="recordBtn" class="record-btn" aria-label="録音開始">
+              <span id="recordIcon">●</span>
+              <span id="recordLabel">話す</span>
+            </button>
+            <div id="recordClock" class="clock">0:00.00</div>
+            <div id="recordStatus" class="muted">タップすると録音と文字起こしを始めます</div>
+            <div id="interim" class="interim hidden"></div>
+            <button id="markerBtn" class="secondary hidden">★ 今ここをマーク</button>
+          </div>
+        </div>
+
+        <div id="fileMode" class="hidden">
+          <div class="card">
+            <label class="file-picker">
+              <span>🎵 音声ファイルを選ぶ</span>
+              <input id="fileInput" type="file" accept="audio/*,.mp3,.m4a,.wav,.aac">
+            </label>
+            <p class="small muted">曲ファイルは再生・0:00.00確認・マーカー・字幕作成に使えます。Safariでは音声ファイルそのものをWeb音声認識へ直接渡せないため、自動認識は「話す」モードが中心です。</p>
+          </div>
+        </div>
+
+        <div id="sessionMeta" class="card hidden">
+          <input id="titleInput" class="title-input" placeholder="タイトル">
+          <div class="row gap">
+            <select id="categorySelect">
+              <option>メモ</option>
+              <option>歌の種</option>
+              <option>仕事</option>
+              <option>TODO</option>
+              <option>会話</option>
+              <option>その他</option>
+            </select>
+            <select id="langSelect">
+              <option value="ja-JP">日本語</option>
+              <option value="en-US">English</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="playerCard" class="card hidden">
+          <audio id="audio" preload="metadata"></audio>
+          <div class="time-row">
+            <div>
+              <span class="tiny muted">現在</span>
+              <div id="currentTime" class="clock smallclock">0:00.00</div>
+            </div>
+            <div class="align-right">
+              <span class="tiny muted">長さ</span>
+              <div id="durationTime" class="clock duration">0:00.00</div>
+            </div>
+          </div>
+          <input id="seek" class="seek" type="range" min="0" max="1" step="0.01" value="0">
+          <div class="controls">
+            <button data-jump="-10">−10</button>
+            <button data-jump="-1">−1</button>
+            <button id="playBtn" class="primary">▶︎</button>
+            <button data-jump="1">＋1</button>
+            <button data-jump="10">＋10</button>
+          </div>
+          <div class="speed-row">
+            <span class="tiny muted">速度</span>
+            <button class="speed" data-speed=".75">0.75×</button>
+            <button class="speed active" data-speed="1">1×</button>
+            <button class="speed" data-speed="1.25">1.25×</button>
+            <button class="speed" data-speed="1.5">1.5×</button>
+          </div>
+          <div class="marker-add">
+            <input id="markerName" placeholder="マーカー名">
+            <button id="addMarkerBtn">★ 追加</button>
+          </div>
+          <div id="markers"></div>
+        </div>
+
+        <div id="transcriptCard" class="card hidden">
+          <div class="card-header">
+            <div class="card-title">文字起こし</div>
+            <button id="addSubtitleBtn" class="secondary">＋字幕</button>
+          </div>
+          <div id="segments"></div>
+
+          <div class="subtitle-tools">
+            <div class="row between">
+              <span>字幕全体</span>
+              <div class="row gap">
+                <button id="offsetMinus">−0.05</button>
+                <span id="offsetLabel" class="mono">−0.30秒</span>
+                <button id="offsetPlus">＋0.05</button>
+              </div>
+            </div>
+            <div class="export-grid">
+              <button data-export="srt">SRT</button>
+              <button data-export="vtt">VTT</button>
+              <button data-export="txt">TXT</button>
+              <button data-export="json">JSON</button>
+              <button id="shareTranscript" class="primary">共有</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="organizeCard" class="card hidden">
+          <div class="card-header">
+            <div class="card-title">整理</div>
+            <button id="organizeBtn" class="primary">✨ 整理する</button>
+          </div>
+          <div id="organizeResult" class="small muted">端末内のルールで、TODO・歌の種・タグ候補を拾います。</div>
+        </div>
+      </section>
+
+      <section id="screen-today" class="screen">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">今日の未処理</div>
+              <div id="pendingCount" class="small muted">0件</div>
+            </div>
+            <button id="scanTodayBtn" class="primary">✨ 今日をスキャン</button>
+          </div>
+          <div class="segmented compact">
+            <button class="task-filter active" data-filter="pending">未処理</button>
+            <button class="task-filter" data-filter="hold">保留</button>
+            <button class="task-filter" data-filter="done">完了</button>
+            <button class="task-filter" data-filter="all">全部</button>
+          </div>
+          <div id="taskList"></div>
+          <button id="shareTodayBtn" class="wide secondary">□ 今日を共有</button>
+        </div>
+      </section>
+
+      <section id="screen-library" class="screen">
+        <div class="card">
+          <input id="searchInput" class="search" placeholder="🔎 タイトル・文字起こしを検索">
+          <div id="libraryList"></div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabbar">
+      <button class="tab active" data-screen="capture"><span>🎙</span><small>話す</small></button>
+      <button class="tab" data-screen="today"><span>☑️</span><small>今日</small><b id="taskBadge" class="badge hidden">0</b></button>
+      <button class="tab" data-screen="library"><span>📚</span><small>本棚</small></button>
+    </nav>
+  </div>
+
+  <dialog id="editDialog">
+    <form method="dialog" class="dialog-card">
+      <h3>文字を編集</h3>
+      <textarea id="editText" rows="7"></textarea>
+      <div class="row end gap">
+        <button value="cancel">キャンセル</button>
+        <button id="saveEditBtn" value="default" class="primary">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
